@@ -15,6 +15,8 @@ public class ServerManager : INetEventListener, INetLogger
     
     //#if UNITY_SERVER
 
+    private int portNumber;
+
 
     // Start is called before the first frame update
     void Start()
@@ -22,7 +24,7 @@ public class ServerManager : INetEventListener, INetLogger
         NetDebug.Logger = this;
         _dataWriter = new NetDataWriter();
         _netServer = new NetManager(this);
-        _netServer.Start(5000);
+        _netServer.Start(portNumber);
         _netServer.BroadcastReceiveEnabled = true;
         _netServer.UpdateTime = 15;
     }
@@ -33,8 +35,21 @@ public class ServerManager : INetEventListener, INetLogger
         _netServer.PollEvents();
     }
 
+    public void FixedUpdate()
+    {
+
+    }
+
     void INetEventListener.OnConnectionRequest(ConnectionRequest request)
     {
+        if(_netServer.ConnectedPeersCount < 5)
+        {
+            request.Accept();
+        }
+        else
+        {
+            request.Reject();
+        }
         
     }
 
@@ -60,6 +75,9 @@ public class ServerManager : INetEventListener, INetLogger
 
     void INetEventListener.OnPeerConnected(NetPeer peer)
     {
+        NetDataWriter writer = new NetDataWriter();
+        writer.Put("Hello world");
+        peer.Send(writer, DeliveryMethod.ReliableOrdered);
 
     }
 
@@ -71,8 +89,14 @@ public class ServerManager : INetEventListener, INetLogger
 
     void INetLogger.WriteNet(NetLogLevel level, string str, params object[] args)
     {
-        throw new System.NotImplementedException();
+        
     }
+
+    public void StopServer()
+    {
+        _netServer.Stop();
+    }
+
     //#endif
 }
 
